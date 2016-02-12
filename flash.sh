@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
+if [ "$#" -ne 1 ] ; then
  	echo "Usage: $0 /dev/disk" >&2
 	exit 1
 fi
