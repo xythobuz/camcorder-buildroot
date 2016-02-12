@@ -31,8 +31,15 @@ p
 w
 EOF
 
-echo Writing bootstream
-sudo dd if=output/images/imx23_olinuxino_dev_linux.sb bs=512 of="$1"1 seek=4
+if [ -e output/images/imx23_olinuxino_dev_linux.sb ] ; then
+	echo Writing mxs-bootlet bootstream
+	sudo dd if=output/images/imx23_olinuxino_dev_linux.sb bs=512 of="$1"1 seek=4
+elif [ -e output/images/u-boot.sd ] ; then
+	echo Writing U-Boot bootstream
+	sudo dd if=output/images/u-boot.sd of="$1"1
+else
+	echo Could not find a suitable bootstream!
+fi
 
 echo Writing root filesystem
 sudo dd if=output/images/rootfs.ext2 of="$1"2 bs=512
