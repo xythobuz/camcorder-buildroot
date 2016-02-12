@@ -41,8 +41,20 @@ else
 	echo Could not find a suitable bootstream!
 fi
 
-echo Writing root filesystem
-sudo dd if=output/images/rootfs.ext2 of="$1"2 bs=512
+if [ -e output/images/rootfs.tar ] ; then
+	echo Creating root filesystem
+	sudo mkfs.ext4 "$1"2 -L rootfs
+
+	echo Mounting root filesystem
+	sudo mkdir -p /media/rootfs
+	sudo mount "$1"2 /media/rootfs
+
+	echo Copying root filesystem
+	sudo tar xfp output/images/rootfs.tar -C /media/rootfs
+else
+	echo Writing root filesystem
+	sudo dd if=output/images/rootfs.ext2 of="$1"2 bs=512
+fi
 
 echo Synchronising changes to disk
 sudo sync
