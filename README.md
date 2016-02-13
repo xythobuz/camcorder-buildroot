@@ -4,6 +4,8 @@ This is a [buildroot](https://buildroot.org) project creating a bootable SD card
 
 U-Boot is used instead of the MXS-Bootlets to support SDHC cards. The current mainline Linux Kernel (4.4.1) has been used.
 
+For more informations, [read my blog post about this project](http://xythobuz.de/2016_02_13_buildroot.html).
+
 ## Getting started
 
 To build, first load the configuration, edit it if neccessary, and run the build:
