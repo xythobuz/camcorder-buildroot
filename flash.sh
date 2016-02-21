@@ -37,6 +37,27 @@ if [ -e output/images/imx23_olinuxino_dev_linux.sb ] ; then
 elif [ -e output/images/u-boot.sd ] ; then
 	echo Writing U-Boot bootstream
 	sudo dd if=output/images/u-boot.sd of="$1"1
+elif [ -e output/images/ ] ; then
+    echo Creaeting boot filesystem
+    sudo mkfs.vfat -F 16 -n boot "$1"1
+
+    echo Mounting boot filesystem
+	sudo mkdir -p /media/boot
+	sudo mount "$1"1 /media/boot
+
+    echo Copying bootloader files
+    sudo cp output/images/rpi-firmware/* /media/boot/
+    sudo cp output/images/*.dtb /media/boot/
+
+    echo Preparing and copying Kernel Image
+    output/host/usr/bin/mkknlimg output/images/zImage /media/boot/zImage
+
+    echo Synchronising changes to disk
+	sudo sync
+
+	echo Unmounting boot filesystem
+	sudo umount /media/boot
+	sudo rm -rf /media/boot
 else
 	echo Could not find a suitable bootstream!
 fi
@@ -58,11 +79,13 @@ if [ -e output/images/rootfs.tar ] ; then
 	echo Unmounting root filesystem
 	sudo umount /media/rootfs
 	sudo rm -rf /media/rootfs
-else
-	echo Writing root filesystem
+elif [ -e output/images/rootfs.ext2 ] ; then
+	echo Writing ext2 root filesystem
 	sudo dd if=output/images/rootfs.ext2 of="$1"2 bs=512
 
 	echo Synchronising changes to disk
 	sudo sync
+else
+    echo Could not find a suitable root filesystem!
 fi
 
