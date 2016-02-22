@@ -14,45 +14,52 @@ done
 echo Overwriting old partition table
 sudo dd if=/dev/zero of=$1 bs=1024 count=1024
 
-echo Recreating new partition table
-sudo fdisk $1 << EOF
-n
-p
-1
-
-+16MB
-t
-53
-n
-p
-2
-
-
-w
+if [ -e output/images/u-boot.sd ] ; then
+	echo Recreating new partition table
+	sed 's/#.*//' << EOF | tr -d " \t"  | sudo fdisk $1
+		n	# new partition
+		p	# primary partition
+		1	# number 1
+			# default start
+		+16M	# 16MB
+		t	# New Type field
+		53	# OnTrack DM6 Aux3
+		n	# new partition
+		p	# primary partition
+		2	# number 2
+			# default start
+			# default size
+		w	# write changes
 EOF
 
-if [ -e output/images/imx23_olinuxino_dev_linux.sb ] ; then
-	echo Writing mxs-bootlet bootstream
-	sudo dd if=output/images/imx23_olinuxino_dev_linux.sb bs=512 of="$1"1 seek=4
-elif [ -e output/images/u-boot.sd ] ; then
 	echo Writing U-Boot bootstream
 	sudo dd if=output/images/u-boot.sd of="$1"1
-elif [ -e output/images/ ] ; then
-    echo Creaeting boot filesystem
-    sudo mkfs.vfat -F 16 -n boot "$1"1
+elif [ -d output/images/rpi-firmware ] ; then
+	SIZE=`sudo fdisk -l $1 | grep Disk | grep bytes | awk '{print $5}'`	
+	echo Disk size: $SIZE bytes
+	CYLINDERS=`echo $SIZE/255/63/512 | bc`
+	echo Cylinders: $CYLINDERS
 
-    echo Mounting boot filesystem
+	sed 's/#.*//' << EOF | tr -d " \t"  | sudo sfdisk -D -H 255 -S 63 -C $CYLINDERS $1
+		,9,0x0C,*	# From http://downloads.angstrom-distribution.org/demo/beaglebone/mkcard.txt
+		,,,-		# Found in http://elinux.org/RPi_Advanced_Setup#Advanced_SD_card_setup
+EOF
+
+	echo Creaeting boot filesystem
+	sudo mkfs.vfat -F 32 -n boot "$1"1
+
+	echo Mounting boot filesystem
 	sudo mkdir -p /media/boot
 	sudo mount "$1"1 /media/boot
 
-    echo Copying bootloader files
-    sudo cp output/images/rpi-firmware/* /media/boot/
-    sudo cp output/images/*.dtb /media/boot/
+	echo Copying bootloader files
+	sudo cp output/images/rpi-firmware/* /media/boot/
+	sudo cp output/images/*.dtb /media/boot/
 
-    echo Preparing and copying Kernel Image
-    output/host/usr/bin/mkknlimg output/images/zImage /media/boot/zImage
+	echo Preparing and copying Kernel Image
+	sudo output/host/usr/bin/mkknlimg output/images/zImage /media/boot/zImage
 
-    echo Synchronising changes to disk
+	echo Synchronising changes to disk
 	sudo sync
 
 	echo Unmounting boot filesystem
@@ -86,6 +93,6 @@ elif [ -e output/images/rootfs.ext2 ] ; then
 	echo Synchronising changes to disk
 	sudo sync
 else
-    echo Could not find a suitable root filesystem!
+	echo Could not find a suitable root filesystem!
 fi
 
