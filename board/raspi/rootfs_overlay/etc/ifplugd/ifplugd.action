@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ -z "$1" ] || [ -z "$2" ] ; then
+	echo "Wrong arguments"
+	exit 1
+fi
+
+[ "$2" = "up" ] && exec udhcpc -i $1
+
+if [ "$2" = "down" ] ; then
+	ifconfig $1 down
+fi
+

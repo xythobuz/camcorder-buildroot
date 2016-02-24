@@ -96,3 +96,5 @@ else
 	echo Could not find a suitable root filesystem!
 fi
 
+eject $1
+
